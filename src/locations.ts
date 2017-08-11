@@ -8,13 +8,19 @@ const ma_base_url = "http://www.nseindia.com/archives/equities/mkt";
 function urlFromParts(parts: [string]): string {
     return parts.join("/");
 }
-
+/**
+ * 
+ * @param date 
+ */
 export function getMAUrl(date: moment.Moment): string {
     const dateString: string = datetime.toStringFormat(date, "DDMMYY");
     const fileName = `MA${dateString}.csv`;
     return urlFromParts([ma_base_url, fileName]);
 }
-
+/**
+ * 
+ * @param date 
+ */
 export function getFNOUrl(date: moment.Moment): string {
     const dateString: string = datetime.toStringFormat(date, "DDMMMYYYY")
         .toUpperCase();
@@ -23,13 +29,20 @@ export function getFNOUrl(date: moment.Moment): string {
     const month: string = datetime.toStringFormat(date, "MMM").toUpperCase();
     return urlFromParts([fno_base_url, year, month, fileName]);
 }
-
+/**
+ * 
+ * @param date 
+ */
 export function getVOLTUrl(date: moment.Moment): string {
     const dateString: string = datetime.toStringFormat(date, "DDMMYYYY");
     const fileName = `FOVOLT_${dateString}.csv`;
     return urlFromParts([volt_base_url, fileName]);
 }
-
+/**
+ * 
+ * @param symbol 
+ * @param date 
+ */
 export function getBhavCopyURL(symbol: string, date: moment.Moment): string {
     if ("MA" === symbol) {
         return getMAUrl(date);
@@ -44,3 +57,7 @@ export function getBhavCopyURL(symbol: string, date: moment.Moment): string {
         throw new Error("Un supported symbol " + symbol)
     };
 }
+
+export const workLocation = "./work";
+export const tempLocation = workLocation + "/temp";
+export const dbLocation = "./db/datafeed.db";

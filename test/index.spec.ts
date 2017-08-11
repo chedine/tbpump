@@ -6,14 +6,6 @@ import * as dt from "../src/datetime";
 import * as R from "ramda"
 import * as moment from "moment";
 
-describe("Main functions", () => {
-  it("Refreshes all data", () => {
-    expect(main.refresh())
-      .to.equal(undefined);
-  })
-});
-
-
 describe("URL functions", () => {
   it("MA URL is right", () => {
     expect(urls.getMAUrl(dt.toDate("20160101"))).to.equal("http://www.nseindia.com/archives/equities/mkt/MA010116.csv");

@@ -18,6 +18,7 @@
             "avoid-escape"
         ],
         "semicolon": [true, "ignore-bound-class-methods"],
+        "no-null-keyword": true,
         "whitespace": [true,
             "check-branch",
             "check-decl",
