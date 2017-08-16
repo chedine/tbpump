@@ -9,65 +9,54 @@ const DEFAULT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64)"
 }
 
-export function makeDownloader(download$: stream, error$: stream) {
-    return function (url: string) {
-        const urlParts: string[] = url.split("/");
-        const fileName = urlParts[urlParts.length - 1];
-        const downloadHandler = function (error: any, response: any, body: any) {
-            if (error) {
-                error$(error);
+export function download(url: string, callback: any) {
+    const urlParts: string[] = url.split("/");
+    const fileName = urlParts[urlParts.length - 1];
+    const downloadHandler = function (error: any, response: any, body: any) {
+        if (error) {
+            console.log("Download: ERR " + error);
+        }
+        else {
+            if (response.statusCode === 200) {
+                callback({ content: response.body, file: fileName });
             }
             else {
-                if (response.statusCode === 200) {
-                    download$({ content: response.body, file: fileName });
-                }
-                else {
-                    error$("Download: File = " + fileName + " Code = " + response.statusCode);
-                }
+                console.log("Download: File = " + fileName + " Code = " + response.statusCode);
             }
         }
-        const options = {
-            url: url,
-            headers: DEFAULT_HEADERS,
-            encoding: null
-        };
-        request(options, downloadHandler);
     }
+    const options = {
+        url: url,
+        headers: DEFAULT_HEADERS,
+        encoding: null
+    };
+    request(options, downloadHandler);
 }
 
-export function makeFileWriter(write$: stream, error$: stream) {
-    return function (baseDir: string, response: any) {
-        const targetFile = path.join(baseDir, response.file);
-        console.log("File: Saving to " + targetFile);
-        fs.writeFile(targetFile, response.content, function (err: any) {
-            if (err) { error$(err) }
-            else {
-                write$(targetFile);
-            }
-        })
-    }
+
+export function saveBhavCopy(baseDir: string, response: any, callback: any) {
+    const targetFile = path.join(baseDir, response.file);
+    console.log("File: Saving to " + targetFile);
+    fs.writeFile(targetFile, response.content, function (err: any) {
+        if (err) { console.log("File : Err" + err); }
+        else {
+            callback(targetFile);
+        }
+    })
 }
+
 
 export function parseFileName(absPath: string) {
     return path.parse(absPath).base;
 }
-export function extractAndArchive(zipFile: string, targetLocation: string, archiveLocation: string) {
+
+export function extract(zipFile: string, targetLocation: string, archiveLocation: string, callback: any) {
     console.log("File: Extracting " + zipFile);
     const unzip$ = fs.createReadStream(zipFile).pipe(unzip.Extract({ path: targetLocation }));
-    const filePath: string = parseFileName(zipFile);
-    mv.move(zipFile, (archiveLocation + "/" + filePath));
-    return targetLocation + "/" + filePath.substring(0, filePath.length - 4);
-}
 
-export function makeExtractor(completion$: stream) {
-    return function (zipFile: string, targetLocation: string, archiveLocation: string) {
-        console.log("File: Extracting " + zipFile);
-        const unzip$ = fs.createReadStream(zipFile).pipe(unzip.Extract({ path: targetLocation }));
-
-        unzip$.on("close", function () {
-            const filePath: string = parseFileName(zipFile);
-            mv.move(zipFile, (archiveLocation + "/" + filePath));
-            completion$(targetLocation + "/" + filePath.substring(0, filePath.length - 4));
-        });
-    }
+    unzip$.on("close", function () {
+        const filePath: string = parseFileName(zipFile);
+        mv.move(zipFile, (archiveLocation + "/" + filePath));
+        callback(targetLocation + "/" + filePath.substring(0, filePath.length - 4));
+    });
 }

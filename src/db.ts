@@ -35,23 +35,35 @@ export class DataStore {
         });
     }
 
-    public insertInstruments(instruments: any[]) {
-        this.db.run("BEGIN");
-        const stmt = this.db.prepare("Insert into Instruments (underlying, open, high, low, close, expiry, oi, trade_date, strike, type, volume, name)" +
-            " values (?,?,?,?,?,?,?,?,?,?,?,?)");
-        instruments.forEach((instrument: any) => stmt.run([instrument.underlying, instrument.open, instrument.high, instrument.low,
-        instrument.close, instrument.expiry, instrument.oi, instrument.trade_date,
-        instrument.strike, instrument.type, instrument.volume, instrument.name]));
-        stmt.finalize();
-        this.db.run("COMMIT");
-        console.log("DB: Inserted " + instruments.length + " rows !!");
+    public insertInstruments(instruments: any[], callback: any) {
+        const db = this.db;
+        this.db.serialize(function () {
+            db.run("BEGIN TRANSACTION");
+            const stmt = db.prepare("Insert into Instruments (underlying, open, high, low, close, expiry, oi, trade_date, strike, type, volume, name)" +
+                " values (?,?,?,?,?,?,?,?,?,?,?,?)");
+            instruments.forEach((instrument: any) => stmt.run([instrument.underlying, instrument.open, instrument.high, instrument.low,
+            instrument.close, instrument.expiry, instrument.oi, instrument.trade_date,
+            instrument.strike, instrument.type, instrument.volume, instrument.name]));
+            stmt.finalize();
+            db.run("COMMIT");
+            console.log("DB: Inserted " + instruments.length + " rows !!");
+            // db.close();
+            callback();
+        });
+
     }
 
     public dump() {
-        this.db.all("select * from instruments", function (err, rows) {
+        this.db.all("select distinct(trade_date) as td from instruments order by trade_date", function (err, rows) {
             rows.forEach(function (row) {
-                console.log(row.id + ": " + row.underlying + " : " + row.type);
+                console.log(row.td);
             });
+        });
+    }
+
+    public findLastRefresh(callback: any) {
+        this.db.all("select max(trade_date) as lastRefresh from instruments", function (err, rows) {
+            callback(rows ? rows[0].lastRefresh : undefined);
         });
     }
 

@@ -3,6 +3,8 @@ const fs = require("fs");
 const flyd = require("flyd");
 import * as dt from "./datetime";
 import * as db from "./db";
+import * as url from "./locations";
+import * as moment from "moment";
 import * as io from "./io";
 
 const contracts = {
@@ -64,7 +66,7 @@ const MA_FILE_OPTS = {
       low: parseFloat(tokens[5]),
       close: parseFloat(tokens[6]),
       type: contracts.Index,
-      trade_date: Number(filename.substring(2, 8))
+      trade_date: Number(dt.dateStrToDateStr(filename.substring(2, 8), "DDMMYYYY", "YYYYMMDD"))
     };
   }
 }
@@ -87,8 +89,8 @@ const FNO_FILE_OPTS = {
       oi: parseFloat(tokens[12]),
       volume: parseFloat(tokens[10]),
       strike: parseFloat(tokens[3]),
-      trade_date: Number(dt.dateStrToDateStr(filename.substring(2, 11), "DDMMMYYYY", "DDMMYYYY")),
-      expiry: Number(dt.dateStrToDateStr(tokens[2], "DD-MMM-YYYY", "DDMMYYYY")),
+      trade_date: Number(dt.dateStrToDateStr(filename.substring(2, 11), "DDMMMYYYY", "YYYYMMDD")),
+      expiry: Number(dt.dateStrToDateStr(tokens[2], "DD-MMM-YYYY", "YYYYMMDD")),
     };
   }
 }
@@ -108,7 +110,7 @@ const VOLT_FILE_OPTS = {
       low: parseFloat(tokens[15]),
       close: parseFloat(tokens[15]),
       type: contracts.Vix,
-      trade_date: Number(filename.substring(7, 15))
+      trade_date: Number(dt.dateStrToDateStr(filename.substring(7, 15), "DDMMYYYY", "YYYYMMDD"))
     };
   }
 }
@@ -119,31 +121,27 @@ const VOLT_FILE_OPTS = {
  * sends it across the stream(data$)
  * @param data$ - Stream on which parsed Instrument object will be sent over.
  */
-export function makeBhavCopyLoader(data$: stream) {
-  flyd.map((ins: any) => db.instance.insertInstruments(ins), data$);
-
-  return function (file: string, opts?: any) {
-    console.log("DB: Loading " + file);
-    const lineReader = reader.createInterface({
-      input: fs.createReadStream(file)
-    });
-    const parserOptions = opts ? opts : resolveParser(file);
-    const fileName = io.parseFileName(file);
-    const instruments = [];
-    lineReader.on("line", function (line: string) {
-      const tokens = line.split(",");
-      if (parserOptions.filter(tokens)) {
-        const instrument = parserOptions.parse(fileName, tokens);
-        addInstrumentName(instrument);
-        // data$(instrument);
-        instruments.push(instrument);
-      }
-    });
-    lineReader.on("close", function () {
-      data$(instruments);
-    });
-  }
+export function transform(file: string, callback: any) {
+  const lineReader = reader.createInterface({
+    input: fs.createReadStream(file)
+  });
+  const parserOptions = resolveParser(file);
+  const fileName = io.parseFileName(file);
+  const instruments = [];
+  lineReader.on("line", function (line: string) {
+    const tokens = line.split(",");
+    if (parserOptions.filter(tokens)) {
+      const instrument = parserOptions.parse(fileName, tokens);
+      addInstrumentName(instrument);
+      // data$(instrument);
+      instruments.push(instrument);
+    }
+  });
+  lineReader.on("close", function () {
+    callback(instruments);
+  });
 }
+
 
 function resolveParser(file: string) {
   const fileName: string = io.parseFileName(file);
@@ -157,13 +155,56 @@ function resolveParser(file: string) {
     return FNO_FILE_OPTS;
   }
 }
+/**
+ * 
+ */
+export function makeETL() {
+  const allInstruments = [];
 
-/** const stream = flyd.stream();
-// readBhavCopy("./work/MA110717.csv", MA_FILE_OPTS);
-makeBhavCopyReader(stream)("./work/temp/fo11JUL2017bhav.csv", FNO_FILE_OPTS);
-makeBhavCopyReader(stream)("./work/FOVOLT_19072017.csv", VOLT_FILE_OPTS);
-makeBhavCopyReader(stream)("./work/MA110717.csv", VOLT_FILE_OPTS);
-// flyd.on((i: any) => console.log(i), stream);
-const db$ = flyd.map((ins: any) => db.insertInstruments(ins), stream);
-flyd.on((i: any) => console.log(i), db$);
-**/
+  function download(date: moment.Moment, callback: any) {
+
+    const extractCompleteHandler = function (fileName: string) {
+      transform(fileName, callback);
+    }
+    const saveHandler = function (fileName: string) {
+      if (fileName.endsWith(".zip")) {
+        io.extract(fileName, url.workLocation, url.tempLocation, extractCompleteHandler);
+      }
+      else {
+        extractCompleteHandler(fileName);
+      }
+    }
+    const downloadHandler = function (response) {
+      io.saveBhavCopy(url.workLocation, response, saveHandler);
+    }
+    io.download(url.getFNOUrl(date), downloadHandler);
+    io.download(url.getMAUrl(date), downloadHandler);
+    io.download(url.getVOLTUrl(date), downloadHandler);
+  }
+
+  function downloadAll(from: moment.Moment, to: moment.Moment) {
+    let dbBusy = false;
+    const days: Set<moment.Moment> = dt.range(from, to);
+    const dbHandler = function (instruments: any) {
+      if (instruments) {
+        dbBusy = true;
+        db.DataStore.getInstance().insertInstruments(instruments, dbHandler);
+      }
+      else {
+        dbBusy = false;
+      }
+    }
+    const dataHandler = function (instruments: any) {
+      allInstruments.push(instruments);
+      if (!dbBusy) {
+        dbBusy = true;
+        db.DataStore.getInstance().insertInstruments(allInstruments.shift(), dbHandler);
+      }
+    }
+    days.forEach((day: moment.Moment) => download(day, dataHandler));
+  }
+  // External API
+  return {
+    downloadAll: downloadAll
+  }
+}
