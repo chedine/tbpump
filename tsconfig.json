@@ -4,7 +4,6 @@
 
         "**/*-spec.ts",
         "build",
-        "build1",
         "node_modules",
         "public",
         "copy"
