@@ -60,11 +60,6 @@ export const buildBhavCopyUrl = R.cond([
     [R.equals("VOLT"), R.always(buildVoltUrl)]
 ]);
 
-export const download1 = url => Future((reject, resolve) =>
-    got(url)
-        .then(response => resolve((response)))
-        .catch(err => reject(err)));
-
 const makeDownloadReqHeader = url => {
     return {
         url: url,

@@ -16,7 +16,6 @@ const checkin = R.curry((messageGenerator, value: any) => {
     console.log(messageGenerator(value));
     return value;
 })
-// const database = new sqlite3.Database("./db/2016_Full.db")
 
 const loadIntoDB = R.curry((database, instruments) =>
      db.bulkInsertInstruments(database, instruments));
