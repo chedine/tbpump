@@ -1,58 +1,57 @@
-const flyd = require("flyd");
-const streamFilter = require("flyd/module/filter");
-const fs = require("fs");
-import * as io from "./io";
+const { Identity, Maybe, Either, Future, IO } = require("ramda-fantasy");
+import * as R from "ramda";
 import * as db from "./db";
-import * as url from "./locations";
-import * as dt from "./datetime";
-import * as moment from "moment";
-import * as etlproc from "./etl";
-/**
- * 
- */
-function main() {
+import * as dblite from "./litedb";
+const fs = require("fs");
+const sqlite3 = require("sqlite3").verbose();
+import * as main from "./main";
+import * as bhav from "./bhavcopy";
+
+const workLocation = "./work";
+
+export function bootstrap() {
     const args = process.argv.slice(2);
-    const etl = etlproc.makeETL();
-    const refresh = function () {
-        console.log("Refreshing database ...");
-        db.DataStore.getInstance().findLastRefresh(function (lastRefresh: number) {
-            console.log("Refreshing from " + lastRefresh);
-            const to = dt.today();
-            const from = dt.toDate(lastRefresh.toString()).add(1, "days");
-            etl.downloadAll(from, to);
+    const cmd = args.length > 0 ? args[0] : "refresh";
+    const database = "./db/datafeed.db";
+    const runETLForDates = (startDate, endDate) => {
+        main.runETL({
+            startDate: startDate,
+            endDate: endDate,
+            env: {
+                database: database,
+                workLocation: workLocation
+            }
         });
     }
-
-    const downloadPeriod = function (start: string, end: string) {
-        const from = dt.toDate(start);
-        const to = dt.toDate(end);
-        etl.downloadAll(from, to);
-    }
-    const cmd = args.length > 0 ? args[0] : "refresh";
-
     if (cmd === "refresh") {
-        refresh();
+        console.log("refreshing ..");
+        dblite.init(database)
+            .chain(dblite.findLastRefresh)
+            .map(results => bhav.momentToISODateStr(
+                bhav.addDays(
+                    bhav.isoDateToMoment(results[0].lastRefresh.toString()), 1)))
+            .fork(console.log, startDate =>
+                runETLForDates(startDate, bhav.todayAsISODate().runIO()));
     }
     else if (cmd === "init") {
-        console.log("Initiliazing database schema");
-        db.DataStore.getInstance().setupSchema();
+        console.log("Initiliazing database schema ..");
+        dblite.dropAndCreate(database).fork(console.error, console.log);
     }
     else if (cmd === "dump") {
-        db.DataStore.getInstance().dump();
+        db.dumpDatabase(database).fork(console.error, console.log)
     }
     else if (cmd === "download") {
         console.log("Downloading bhav copies from " + args[1] + " to " + args[2]);
-        downloadPeriod(args[1], args[2]);
+        dblite.init(database).fork(console.error, _ => runETLForDates(args[1], args[2]));
     }
     else {
         console.log("Unknown command ...");
     }
 }
 
-// Setup work location
-fs.mkdir(url.workLocation, function (err: any) {
+fs.mkdir(workLocation, function (err: any) {
     if (err) {
         console.log("Skipping work directory creation..")
     }
-    main();
+    bootstrap();
 });

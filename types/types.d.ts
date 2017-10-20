@@ -1,18 +1,13 @@
-interface stream {
-    (val?: any): any,
-    end(b: boolean)
-}
-
-interface Instrument {
+type Instrument = {
     open: number,
-    expiry: number,
+    expiry?: number,
     trade_date: number,
     name: String,
     type: number,
     close: number,
     volume?: number,
     high: number,
-    strike: number,
+    strike?: number,
     underlying: String,
     low: number,
     oi?: number
@@ -56,4 +51,26 @@ interface Greeks {
 interface OptionGreeks{
     ce: Greeks
     pe: Greeks
+}
+
+
+type ETLReport = {
+    url: string,
+    file: string,
+    archive?: string
+    instruments : Instrument[],
+    totalLoaded : number,
+    downloaded? : boolean,
+    downloadMsg?: string
+}
+
+type AppSpec = {
+    startDate: string,
+    endDate : string,
+    env: AppEnv
+}
+
+type AppEnv = {
+    database: any,
+    workLocation: string
 }

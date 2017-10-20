@@ -6,7 +6,8 @@
         "build",
         "build1",
         "node_modules",
-        "public"
+        "public",
+        "copy"
     ],
     "typeRoots": [
         "../node_modules/@types"
@@ -20,6 +21,7 @@
         "removeComments": true,
         "allowJs": true,
         "outDir": "build",
-        "sourceMap": true
+        "sourceMap": true,
+        "experimentalDecorators": true
     }
 }
