@@ -3,7 +3,6 @@ import * as R from "ramda";
 import * as moment from "moment";
 import * as parser from "./parser";
 import * as bhav from "./bhavcopy";
-// import * as db from "./db";
 import * as db from "./litedb";
 
 const workLocation = "./work";
@@ -12,13 +11,13 @@ const tapIO = obj => IO(() => {
     console.log(obj);
     return obj;
 });
-const checkin = R.curry((messageGenerator, value: any) => {
+const checkin = R.curry((messageGenerator: any, value: any) => {
     console.log(messageGenerator(value));
     return value;
 })
 
-const loadIntoDB = R.curry((database, instruments) =>
-     db.bulkInsertInstruments(database, instruments));
+const loadIntoDB = R.curry((database, instruments: db.Instrument[]) =>
+    db.bulkInsertInstruments(database, instruments));
 
 const loadBhavCopy = (env: AppEnv, bhavCopyType: string, filePath: string) => {
     const toInstruments = parser.buildBhavCopyParser(
@@ -28,7 +27,7 @@ const loadBhavCopy = (env: AppEnv, bhavCopyType: string, filePath: string) => {
         .map(toInstruments) // Identity<[instruments]>
         .chain(i => loadIntoDB(env.database, i.get()))
 }
-// ----- APP  -------------------------
+
 const extract = (date: string, bhavCopyType: string) => {
     const urlBuilder = bhav.buildBhavCopyUrl(bhavCopyType);
     const dateStrBuilder = bhav.buildBhavCopyDateTypes(bhavCopyType);
@@ -36,7 +35,6 @@ const extract = (date: string, bhavCopyType: string) => {
         IO(() => bhav.isoDateToMoment(date))
             .map(dateStrBuilder)
             .chain(d => IO.of(urlBuilder(d)))
-            //     .chain(tapIO)
             .map(bhav.download)
             .runIO()
             .map(checkin(resp => `Downloaded from : ${resp.requestUrl}`))
@@ -65,4 +63,4 @@ export const runETL = (appInput: AppSpec) => {
         .map(bhav.momentToISODateStr);
     app(appInput.env, listOfDatesToETL);
 }
- // app("20171010", "FNO");
+

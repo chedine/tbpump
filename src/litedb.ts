@@ -15,7 +15,7 @@ export class Instrument {
     id?: number;
 
     @Column("integer", { nullable: true })
-    expiry: number;
+    expiry?: number;
 
     @Column("double", { nullable: false })
     close: number;
@@ -51,7 +51,7 @@ export class Instrument {
     name: number;
 }
 
-const setup = R.curry((dropSchema, databaseLocation) =>
+const setup = R.curry((dropSchema: boolean, databaseLocation: string) =>
     Future((reject, resolve) => createConnection({
         type: "sqlite",
         database: databaseLocation,

@@ -37,7 +37,7 @@ export function bootstrap() {
         dblite.dropAndCreate(database).fork(console.error, console.log);
     }
     else if (cmd === "dump") {
-        db.dumpDatabase(database).fork(console.error, console.log)
+       //  db.dumpDatabase(database).fork(console.error, console.log)
     }
     else if (cmd === "download") {
         console.log("Downloading bhav copies from " + args[1] + " to " + args[2]);
