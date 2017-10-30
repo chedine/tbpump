@@ -1,7 +1,7 @@
 ### Live transpilation
 tsc -w
 ### Test watch
-npm run test:watch
+npm run-script test:watch
 ### Run
 
 #### Initialize database

@@ -74,6 +74,5 @@ describe("Date Ranges are built correctly", () => {
     const dateRange = bhav.getDateRange(bhav.isoDateToMoment("20170101"), bhav.isoDateToMoment("20170101"));
     expect(dateRange).to.not.null;
     expect(dateRange.length).to.equal(0);
-   
   });
 });
