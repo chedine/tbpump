@@ -52,7 +52,7 @@ export const etl = (env: AppEnv, date: string, bhavCopyType: string) => {
 const app = R.curry((env: AppEnv, dates: string[]) => {
     //   const listOfFutures: any = R.traverse(Future.of, d => etl(d, bhavCopyType) , dates);
     //  listOfFutures.fork(console.log, console.log);
-    const bhavCopyDates = R.xprod(dates, ["FNO", "MA", "VOLT"]);
+    const bhavCopyDates = R.xprod(dates, ["FNO"]);//, "MA", "VOLT"]);
     bhavCopyDates.map((pair: string[]) => etl(env, pair[0], pair[1])
         .fork(console.error, console.log));
 });

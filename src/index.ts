@@ -2,7 +2,7 @@ const { Identity, Maybe, Either, Future, IO } = require("ramda-fantasy");
 import * as R from "ramda";
 import * as dblite from "./litedb";
 const fs = require("fs");
-const sqlite3 = require("sqlite3").verbose();
+
 import * as main from "./main";
 import * as bhav from "./bhavcopy";
 

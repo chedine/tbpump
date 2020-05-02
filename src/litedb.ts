@@ -3,7 +3,6 @@ import {
     JoinColumn, JoinTable, PrimaryColumn, PrimaryGeneratedColumn
 }
     from "typeorm";
-import sqlite3 = require("sqlite3");
 import { createConnection, getManager, getConnection } from "typeorm";
 const { Identity, Maybe, Either, Future, IO } = require("ramda-fantasy");
 import * as R from "ramda";
@@ -53,8 +52,11 @@ export class Instrument {
 
 const setup = R.curry((dropSchema: boolean, databaseLocation: string) =>
     Future((reject, resolve) => createConnection({
-        type: "sqlite",
-        database: databaseLocation,
+        type: "mariadb",
+        database: "bhavcopy",
+        username:"admin",
+        password:"password",
+        host:"127.0.0.1",
         entities: [
             Instrument
         ],

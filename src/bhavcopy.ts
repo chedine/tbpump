@@ -6,7 +6,7 @@ const limit = require("simple-rate-limiter");
 const path = require("path");
 const decompress = require("decompress");
 import * as parser from "./parser";
-const request = limit(require("request")).to(1).per(500);
+const request = limit(require("request")).to(1).per(1000);
 
 export const dateStrToMoment = R.curry((format: string, dateStr: string) =>
     moment(dateStr, format));
@@ -46,7 +46,7 @@ const buildFNOUrl = (dateStr: string) => {
         .map(upperDate => {
             const year = upperDate.substr(5, 4);
             const mon = upperDate.substr(2, 3);
-            return `http://www.nseindia.com/content/historical/DERIVATIVES/${year}/${mon}/fo${upperDate}bhav.csv.zip`;
+            return `https://www1.nseindia.com/content/historical/DERIVATIVES/${year}/${mon}/fo${upperDate}bhav.csv.zip`;
         })
         .get();
 
