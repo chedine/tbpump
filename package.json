@@ -14,7 +14,7 @@
   "author": "Chedine",
   "license": "UNLICENSED",
   "dependencies": {
-    "decompress": "^4.2.0",
+    "decompress": "^4.2.1",
     "fs-extra": "^4.0.2",
     "mariadb": "^2.2.0",
     "moment": "^2.19.1",
